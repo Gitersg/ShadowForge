@@ -1,0 +1,42 @@
+{
+  "app": {
+    "name": "ShadowForge",
+    "version": "1.0.0",
+    "theme": "dark"
+  },
+  "logging": {
+    "level": "INFO",
+    "log_to_file": true,
+    "log_dir": "logs"
+  },
+  "agents": {
+    "vision": {
+      "ocr_engine": "pytesseract",
+      "screenshot_dir": "data/screenshots",
+      "confidence_threshold": 0.6
+    },
+    "file": {
+      "default_scan_depth": 3,
+      "duplicate_hash_algorithm": "md5"
+    },
+    "automation": {
+      "pause_between_actions": 0.3,
+      "failsafe": true,
+      "screenshot_on_action": true
+    },
+    "planner": {
+      "max_concurrent_tasks": 1,
+      "retry_failed": false
+    }
+  },
+  "gui": {
+    "window_width": 1100,
+    "window_height": 750,
+    "refresh_interval_ms": 1000,
+    "accent_color": "#6C63FF"
+  },
+  "plugins": {
+    "directory": "plugins",
+    "auto_load": true
+  }
+}
