@@ -22,7 +22,7 @@ If you downloaded this project as a ZIP from GitHub (not `git clone`), follow th
 
 **Where screenshots are saved on your PC:** `data/screenshots/` inside the project folder (created automatically on first run).
 
-See `START_HERE.txt` in the project root for full instructions.
+See `START_HERE.txt` in the project root for quick instructions, or **`USER_MANUAL.md`** for the complete professional user guide.
 
 ---
 
