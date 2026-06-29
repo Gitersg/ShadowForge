@@ -79,8 +79,9 @@ ShadowForge/
 
 1. Open the ShadowForge folder
 2. Double-click **`INSTALL_AND_RUN.bat`**
-3. Wait 1–2 minutes while dependencies install (first run only)
-4. The ShadowForge dashboard will open automatically
+3. If Windows shows **"Unknown publisher"** or **"Windows protected your PC"**, this is expected for unsigned open-source software downloaded from the internet. ShadowForge is safe — it is simply not digitally signed. Click **More info** → **Run anyway**. Alternatively, right-click the `.bat` file → **Properties** → check **Unblock** → **OK**, then run again.
+4. Wait 1–2 minutes while dependencies install (first run only)
+5. The ShadowForge dashboard will open automatically
 
 **Subsequent launches:** Double-click **`RUN_SHADOWFORGE.bat`**
 
@@ -362,6 +363,7 @@ Refer to `plugins/example_agent.py` for the required structure.
 
 | Problem | Solution |
 |---------|----------|
+| "Unknown publisher" or SmartScreen warning | Normal for unsigned ZIP downloads. Click **More info** → **Run anyway**, or unblock the file in Properties. Not a sign of malware. |
 | Application does not open | Ensure Python 3.10+ is installed with PATH enabled. Run `INSTALL_AND_RUN.bat` and review any error messages. |
 | "Python not found" error | Reinstall Python and check **"Add Python to PATH"** during setup. |
 | Tasks remain in Pending status | Click **▶ Start Executor** before running workflows. |

@@ -6,6 +6,9 @@ echo  ============================================
 echo    SHADOWFORGE - Setup and Launch
 echo  ============================================
 echo.
+echo  If Windows showed "Unknown publisher" - that is normal.
+echo  Open-source apps are not code-signed. This file is safe.
+echo.
 
 cd /d "%~dp0"
 

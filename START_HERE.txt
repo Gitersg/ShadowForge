@@ -15,6 +15,11 @@ STEP 2 - Find these files (they are in the SAME folder):
 
 STEP 3 - First time run (Windows)
   - Double-click: INSTALL_AND_RUN.bat
+  - Windows may show "Unknown publisher" or "Windows protected your PC"
+    This is NORMAL for free open-source software downloaded as a ZIP.
+    It is not a virus — ShadowForge is not code-signed (signing costs money).
+    To proceed: click "More info" then "Run anyway"
+    Or: right-click the .bat file -> Properties -> check "Unblock" -> OK
   - Wait 1-2 minutes (installs dependencies automatically)
   - ShadowForge window will open
 
