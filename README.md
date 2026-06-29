@@ -8,6 +8,24 @@ Built for the Kaggle 5-Day AI Agents Vibe Coding Capstone.
 
 ---
 
+## Downloaded the ZIP? Start Here
+
+If you downloaded this project as a ZIP from GitHub (not `git clone`), follow these steps:
+
+1. **Extract the ZIP** — you will get a folder named `ShadowForge-main` or `ShadowForge`.
+2. **Open that folder** — inside you will find `main.py`, `INSTALL_AND_RUN.bat`, and `START_HERE.txt`.
+3. **Install Python 3.10+** from [python.org](https://www.python.org/downloads/) if you do not have it. Check **"Add Python to PATH"** during install.
+4. **Double-click `INSTALL_AND_RUN.bat`** — this installs dependencies and launches the app (first run takes 1–2 minutes).
+5. **Next time**, double-click `RUN_SHADOWFORGE.bat` to open the app instantly.
+
+> **There is no `.exe` file.** The app runs via `main.py` (Python). The `.bat` files above run it for you automatically.
+
+**Where screenshots are saved on your PC:** `data/screenshots/` inside the project folder (created automatically on first run).
+
+See `START_HERE.txt` in the project root for full instructions.
+
+---
+
 ## Features
 
 - **Multi-Agent Architecture** — Vision, File, Automation, and Planner agents coordinated by an Orchestrator

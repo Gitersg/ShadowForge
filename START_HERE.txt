@@ -1,0 +1,43 @@
+SHADOWFORGE - START HERE
+========================
+
+Downloaded from GitHub? Follow these steps:
+
+STEP 1 - Extract the ZIP
+  - You will get a folder named "ShadowForge-main" or "ShadowForge"
+  - Open that folder
+
+STEP 2 - Find these files (they are in the SAME folder):
+  - main.py              <-- this is the app entry point (Python file)
+  - INSTALL_AND_RUN.bat  <-- double-click THIS to setup and run
+  - README.md
+  - requirements.txt
+
+STEP 3 - First time run (Windows)
+  - Double-click: INSTALL_AND_RUN.bat
+  - Wait 1-2 minutes (installs dependencies automatically)
+  - ShadowForge window will open
+
+STEP 4 - Next time
+  - Double-click: RUN_SHADOWFORGE.bat
+
+REQUIREMENTS
+  - Python 3.10+ must be installed: https://www.python.org/downloads/
+  - During Python install, check "Add Python to PATH"
+
+MANUAL RUN (if .bat does not work)
+  1. Open PowerShell in this folder
+  2. python -m venv venv
+  3. venv\Scripts\activate
+  4. pip install -r requirements.txt
+  5. python main.py
+
+WHERE SCREENSHOTS ARE SAVED (on YOUR computer)
+  - data/screenshots/
+  - Example: ShadowForge\data\screenshots\screen_1234567890.png
+
+WHERE LOGS ARE SAVED
+  - logs/shadowforge.log
+  - data/history.json
+
+GITHUB: https://github.com/Gitersg/ShadowForge
