@@ -7,7 +7,6 @@
 
 ShadowForge is a modular multi-agent system that observes your desktop, scans folders, and runs reliable automations — with **zero cloud APIs and zero internet dependency** after setup.
 
-Built for the Kaggle 5-Day AI Agents Vibe Coding Capstone.
 
 ---
 
@@ -18,13 +17,13 @@ Built for the Kaggle 5-Day AI Agents Vibe Coding Capstone.
 - **Quick Actions** — reliable one-click automations (Win+D, Ctrl+S, Screenshot, Alt+Tab, and more)
 - **EasyOCR + Tesseract** — dual OCR engines with Windows Tesseract auto-detection
 - **Workflow context chaining** — agents pass results to each other automatically
-- **MIT LICENSE + author credit** — full open-source protection
+
 
 ---
 
 ## Downloaded the ZIP? Start Here
 
-1. **Extract the ZIP** — folder will be named `ShadowForge-main` or `ShadowForge`
+1. **Extract the ZIP** — folder will may be named something like `ShadowForge-main` or `ShadowForge`
 2. **Install Python 3.10+** from [python.org](https://www.python.org/downloads/) — check **"Add Python to PATH"**
 3. **Double-click `INSTALL_AND_RUN.bat`** — installs dependencies and opens the app (first run: 1–2 min)
 4. **Next time**, double-click `RUN_SHADOWFORGE.bat`
@@ -39,18 +38,18 @@ See **`START_HERE.txt`** for quick steps or **`USER_MANUAL.md`** for the full pr
 
 ## Core Features (v2.1)
 
-### 📸 Screen Monitor
+### Screen Monitor
 Set an interval (1–10 seconds) and capture screenshots automatically while you work. Ideal for study sessions, documentation, and screen auditing. Stops when you stop the executor.
 
-### 📁 Folder Scanner
+### Folder Scanner
 Enter or browse to **any folder path**. Get a full report: file count, total size, file types, categories, largest files, and duplicate groups. Every scan is fresh — no stale cached results.
 
-### ⚡ Quick Actions
+###  Quick Actions
 Pick a preset action from a dropdown and run it after a 3-second countdown. No OCR required — works every time.
 
 Available actions: Show Desktop, Open Run, Open Explorer, Screenshot Now, Ctrl+S, Copy+Paste, Alt+Tab, F5, Select All, Type Custom Text, Custom Hotkey.
 
-### 🤖 Multi-Agent System
+###  Multi-Agent System
 Vision, File, Automation, and Planner agents coordinated by an Orchestrator with message bus, task planner, executor, and plugin support.
 
 ---
@@ -341,7 +340,6 @@ git push -u origin main
 - [x] Folder scanner with duplicate detection
 - [x] Quick Actions panel
 - [x] EasyOCR + Tesseract dual OCR
-- [x] MIT License and author protection
 - [ ] Agent memory across sessions
 - [ ] Visual workflow builder in GUI
 - [ ] Scheduled background tasks
@@ -355,7 +353,7 @@ git push -u origin main
 ## Author & Support
 
 **Built by Shrinjoy Ghosh ([@Gitersg](https://github.com/Gitersg))** — Kolkata, India · 2026  
-Built for the Kaggle 5-Day AI Agents Vibe Coding Capstone.
+This Project Version is Explicitly Built for the Kaggle 5-Day AI Agents Vibe Coding Capstone 2026.
 
 If ShadowForge helps you, a star on GitHub means a lot.
 
