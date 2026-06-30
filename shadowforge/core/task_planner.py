@@ -60,10 +60,15 @@ class Task:
 
 # Rule-based workflow templates
 WORKFLOW_TEMPLATES: dict[str, list[dict[str, Any]]] = {
+    "device_scanner": [
+        {"name": "Scan directory", "agent": "file", "action": "scan_directory", "params": {"path": "~/Desktop", "depth": 5}},
+        {"name": "Analyze & summarize", "agent": "file", "action": "analyze_summary", "params": {}},
+        {"name": "Find duplicates", "agent": "file", "action": "find_duplicates", "params": {}},
+    ],
     "organize_desktop": [
         {"name": "Scan desktop", "agent": "file", "action": "scan_directory", "params": {"path": "~/Desktop"}},
-        {"name": "Detect duplicates", "agent": "file", "action": "find_duplicates", "params": {}},
-        {"name": "Organize by type", "agent": "file", "action": "organize_by_type", "params": {}},
+        {"name": "Analyze & summarize", "agent": "file", "action": "analyze_summary", "params": {}},
+        {"name": "Find duplicates", "agent": "file", "action": "find_duplicates", "params": {}},
     ],
     "screen_audit": [
         {"name": "Capture screen", "agent": "vision", "action": "capture_screen", "params": {}},
@@ -72,13 +77,20 @@ WORKFLOW_TEMPLATES: dict[str, list[dict[str, Any]]] = {
     ],
     "cleanup_downloads": [
         {"name": "Scan downloads", "agent": "file", "action": "scan_directory", "params": {"path": "~/Downloads"}},
+        {"name": "Analyze & summarize", "agent": "file", "action": "analyze_summary", "params": {}},
         {"name": "Find duplicates", "agent": "file", "action": "find_duplicates", "params": {}},
-        {"name": "Remove empty folders", "agent": "file", "action": "cleanup_empty_dirs", "params": {}},
+    ],
+    "smart_automate": [
+        {"name": "Capture screen", "agent": "vision", "action": "capture_screen", "params": {}},
+        {"name": "Find target text", "agent": "vision", "action": "find_text", "params": {}},
+        {"name": "Click target", "agent": "automation", "action": "click", "params": {"require_target": True}},
+        {"name": "Execute keys", "agent": "automation", "action": "execute_keys", "params": {}},
     ],
     "automate_click": [
         {"name": "Capture screen", "agent": "vision", "action": "capture_screen", "params": {}},
-        {"name": "Find target", "agent": "vision", "action": "find_text", "params": {}},
-        {"name": "Click target", "agent": "automation", "action": "click", "params": {}},
+        {"name": "Find target text", "agent": "vision", "action": "find_text", "params": {}},
+        {"name": "Click target", "agent": "automation", "action": "click", "params": {"require_target": True}},
+        {"name": "Execute keys", "agent": "automation", "action": "execute_keys", "params": {}},
     ],
 }
 

@@ -27,6 +27,7 @@ class FileAgent(BaseAgent):
             message_bus=message_bus,
             capabilities=[
                 "scan_directory",
+                "analyze_summary",
                 "find_duplicates",
                 "organize_by_type",
                 "cleanup_empty_dirs",
@@ -50,6 +51,7 @@ class FileAgent(BaseAgent):
 
         handlers = {
             "scan_directory": self._scan_directory,
+            "analyze_summary": self._analyze_summary,
             "find_duplicates": self._find_duplicates,
             "organize_by_type": self._organize_by_type,
             "cleanup_empty_dirs": self._cleanup_empty_dirs,
@@ -113,6 +115,54 @@ class FileAgent(BaseAgent):
             "extension_breakdown": dict(ext_counts),
             "files": files[:100],
         }
+
+    def _categorize(self, extension: str) -> str:
+        for cat, extensions in self.organize_categories.items():
+            if extension in extensions:
+                return cat
+        return "other"
+
+    def _analyze_summary(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Full analysis report for the last scanned directory."""
+        if not self._last_scan.get("files") and params.get("path"):
+            self._scan_directory({"path": params["path"], "depth": params.get("depth", 5)})
+
+        files = self._last_scan.get("files", [])
+        if not files:
+            raise RuntimeError("No scan data. Run scan_directory first or provide a valid path.")
+
+        categories: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        ext_counts: dict[str, int] = defaultdict(int)
+        for file_info in files:
+            ext = file_info["extension"] or "(no ext)"
+            ext_counts[ext] += 1
+            categories[self._categorize(file_info["extension"])].append(file_info)
+
+        largest = sorted(files, key=lambda f: f["size"], reverse=True)[:10]
+        total_size = sum(f["size"] for f in files)
+
+        report = {
+            "success": True,
+            "scanned_path": self._last_scan.get("path"),
+            "total_files": len(files),
+            "total_size_mb": round(total_size / (1024 * 1024), 2),
+            "unique_extensions": len(ext_counts),
+            "extension_breakdown": dict(sorted(ext_counts.items(), key=lambda x: x[1], reverse=True)[:20]),
+            "category_breakdown": {cat: len(items) for cat, items in categories.items()},
+            "largest_files": [
+                {"name": f["name"], "size_mb": round(f["size"] / (1024 * 1024), 2), "path": f["path"]}
+                for f in largest
+            ],
+            "category_details": {
+                cat: [f["name"] for f in items[:5]]
+                for cat, items in categories.items() if items
+            },
+        }
+        self.logger.info(
+            "Analysis: %d files, %.1f MB, %d categories",
+            report["total_files"], report["total_size_mb"], len(report["category_breakdown"]),
+        )
+        return report
 
     def _file_hash(self, filepath: Path, algorithm: str = "md5") -> str:
         h = hashlib.new(algorithm)

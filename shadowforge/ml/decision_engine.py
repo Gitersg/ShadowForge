@@ -9,9 +9,14 @@ from typing import Any
 # Keyword → workflow mapping rules
 GOAL_RULES: list[dict[str, Any]] = [
     {
-        "patterns": [r"organize", r"sort", r"clean\s*up", r"tidy", r"desktop"],
-        "workflow": "organize_desktop",
+        "patterns": [r"scan", r"analyze", r"device", r"folder", r"directory"],
+        "workflow": "device_scanner",
         "weight": 1.0,
+    },
+    {
+        "patterns": [r"organize", r"sort", r"clean\s*up", r"tidy", r"desktop"],
+        "workflow": "device_scanner",
+        "weight": 0.95,
     },
     {
         "patterns": [r"screen", r"ocr", r"read", r"capture", r"see", r"look", r"audit"],
@@ -24,9 +29,9 @@ GOAL_RULES: list[dict[str, Any]] = [
         "weight": 0.9,
     },
     {
-        "patterns": [r"click", r"automate", r"press", r"type", r"mouse"],
-        "workflow": "automate_click",
-        "weight": 0.8,
+        "patterns": [r"click", r"automate", r"press", r"type", r"mouse", r"find.*click"],
+        "workflow": "smart_automate",
+        "weight": 1.0,
     },
 ]
 

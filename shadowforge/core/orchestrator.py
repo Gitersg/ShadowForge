@@ -32,14 +32,12 @@ class Orchestrator:
         self._status_callbacks: list[Callable[[dict[str, Any]], None]] = []
 
     def register_agent(self, agent: BaseAgent) -> None:
-        """Register an agent with the orchestrator and executor."""
         self._agents[agent.name] = agent
         self.executor.register_agent(agent)
         agent.start()
         self.logger.info("Orchestrator registered agent: %s", agent.name)
 
     def load_plugins(self) -> list[BaseAgent]:
-        """Load and register all plugins from the plugin directory."""
         agents = self.plugin_manager.load_all(self.message_bus)
         for agent in agents:
             self.register_agent(agent)
@@ -50,8 +48,9 @@ class Orchestrator:
         workflow_name: str,
         overrides: Optional[dict[str, Any]] = None,
     ) -> list[Task]:
-        """Queue and optionally execute a named workflow."""
         tasks = self.planner.enqueue_workflow(workflow_name, overrides)
+        if tasks and overrides and tasks[0].parent_id:
+            self.executor.set_workflow_context(tasks[0].parent_id, overrides)
         self.logger.info("Queued workflow '%s' with %d tasks", workflow_name, len(tasks))
         self._notify_status()
         return tasks
@@ -65,7 +64,6 @@ class Orchestrator:
         priority: TaskPriority = TaskPriority.NORMAL,
         execute_now: bool = False,
     ) -> Task:
-        """Create and optionally immediately execute a single task."""
         task = self.planner.create_custom_task(name, agent, action, params, priority)
         self.planner.enqueue(task)
         if execute_now:
@@ -73,16 +71,42 @@ class Orchestrator:
         self._notify_status()
         return task
 
+    def start_screen_monitor(self, interval_sec: float = 5.0) -> dict[str, Any]:
+        """Start continuous screenshot capture at the given interval."""
+        if not self.executor.is_running:
+            self.start_executor()
+        vision = self._agents.get("vision")
+        if not vision or not hasattr(vision, "start_interval_capture"):
+            raise RuntimeError("Vision agent not available")
+        result = vision.start_interval_capture(interval_sec)
+        self.history.record("vision", "interval_capture", "started", {"interval": interval_sec})
+        self._notify_status()
+        return result
+
+    def stop_screen_monitor(self) -> dict[str, Any]:
+        vision = self._agents.get("vision")
+        if vision and hasattr(vision, "stop_interval_capture"):
+            result = vision.stop_interval_capture()
+            self.history.record("vision", "interval_capture", "stopped", result)
+            self._notify_status()
+            return result
+        return {"success": True}
+
+    def get_screen_monitor_status(self) -> dict[str, Any]:
+        vision = self._agents.get("vision")
+        if vision and hasattr(vision, "get_capture_status"):
+            return vision.get_capture_status()
+        return {"running": False, "capture_count": 0, "interval_sec": 0}
+
     def start_executor(self) -> None:
-        """Start background task execution."""
         self.executor.start()
 
     def stop_executor(self) -> None:
-        """Stop background task execution."""
+        self.stop_screen_monitor()
         self.executor.stop()
 
     def stop_all(self) -> None:
-        """Stop executor and all agents."""
+        self.stop_screen_monitor()
         self.stop_executor()
         for agent in self._agents.values():
             agent.stop()
@@ -95,6 +119,7 @@ class Orchestrator:
             "agents": self.get_agent_status(),
             "task_stats": self.planner.get_stats(),
             "executor_running": self.executor.is_running,
+            "screen_monitor": self.get_screen_monitor_status(),
             "plugins": self.plugin_manager.list_plugins(),
             "message_count": len(self.message_bus.get_history()),
         }

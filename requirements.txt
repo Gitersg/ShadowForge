@@ -1,4 +1,4 @@
-# ShadowForge — Local Multi-Agent Desktop Automation System
+# ShadowForge v2 — Local Multi-Agent Desktop Automation
 # Python 3.10+ recommended
 
 # GUI
@@ -8,15 +8,14 @@ customtkinter>=5.2.0
 opencv-python>=4.8.0
 Pillow>=10.0.0
 pytesseract>=0.3.10
+easyocr>=1.7.0
 
 # UI Automation
 pyautogui>=0.9.54
+pyperclip>=1.8.2
 
 # Utilities
 numpy>=1.24.0
 
-# Optional: alternative OCR engine (heavier, includes ML models)
-# easyocr>=1.7.0
-
-# Build executable
+# Build executable (optional)
 # pyinstaller>=6.0.0
