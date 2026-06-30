@@ -2,6 +2,9 @@
 
 **A fully local, offline Multi-Agent Desktop Automation System**
 
+**Author:** [Shrinjoy Ghosh](https://github.com/Gitersg) · **Repository:** [github.com/Gitersg/ShadowForge](https://github.com/Gitersg/ShadowForge)  
+**License:** MIT — free to use and learn from; please keep author credit if you redistribute.
+
 ### What's New in v2.1
 - **Screen Monitor** — interval capture (1/2/3/5/10 sec) while executor runs
 - **Folder Scanner** — scan ANY folder with Browse button; fresh results every time (bug fixed)
@@ -249,8 +252,7 @@ git init
 git add .
 git commit -m "Initial commit: ShadowForge multi-agent desktop automation"
 
-# Replace with your repo URL
-git remote add origin https://github.com/YOUR_USERNAME/ShadowForge.git
+git remote add origin https://github.com/Gitersg/ShadowForge.git
 git branch -M main
 git push -u origin main
 ```
@@ -270,12 +272,24 @@ git push -u origin main
 
 ---
 
+## Author & Support
+
+**Built by Shrinjoy Ghosh ([@Gitersg](https://github.com/Gitersg))** — Kolkata, India · 2026  
+Built for the Kaggle 5-Day AI Agents Vibe Coding Capstone.
+
+If ShadowForge helps you, a star on GitHub means a lot. Optional tip: add your [Ko-fi](https://ko-fi.com) link here when ready.
+
+---
+
 ## License
 
-MIT License — built with passion for the Kaggle Vibe Coding Capstone.
+This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for full text.
+
+You may use, modify, and share ShadowForge freely. If you redistribute it, keep the copyright notice and license. That protects both you and anyone who uses your code.
 
 ---
 
 <p align="center">
-  <strong>ShadowForge</strong> — Your desktop. Your agents. Your rules. Fully offline.
+  <strong>ShadowForge</strong> — Your desktop. Your agents. Your rules. Fully offline.<br>
+  © 2026 Shrinjoy Ghosh
 </p>
