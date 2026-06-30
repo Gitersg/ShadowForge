@@ -357,7 +357,7 @@ git push -u origin main
 **Built by Shrinjoy Ghosh ([@Gitersg](https://github.com/Gitersg))** — Kolkata, India · 2026  
 Built for the Kaggle 5-Day AI Agents Vibe Coding Capstone.
 
-If ShadowForge helps you, a ⭐ star on GitHub means a lot.
+If ShadowForge helps you, a star on GitHub means a lot.
 
 ---
 
