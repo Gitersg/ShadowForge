@@ -277,7 +277,7 @@ git push -u origin main
 **Built by Shrinjoy Ghosh ([@Gitersg](https://github.com/Gitersg))** — Kolkata, India · 2026  
 Built for the Kaggle 5-Day AI Agents Vibe Coding Capstone.
 
-If ShadowForge helps you, a star on GitHub means a lot. Optional tip: add your [Ko-fi](https://ko-fi.com) link here when ready.
+If ShadowForge helps you, a star on GitHub means a lot. 
 
 ---
 
@@ -285,7 +285,7 @@ If ShadowForge helps you, a star on GitHub means a lot. Optional tip: add your [
 
 This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for full text.
 
-You may use, modify, and share ShadowForge freely. If you redistribute it, keep the copyright notice and license. That protects both you and anyone who uses your code.
+You may use, modify, and share ShadowForge freely. If want to redistribute it, keep the copyright notice and license. 
 
 ---
 
