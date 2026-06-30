@@ -10,12 +10,12 @@ from typing import Any
 GOAL_RULES: list[dict[str, Any]] = [
     {
         "patterns": [r"scan", r"analyze", r"device", r"folder", r"directory"],
-        "workflow": "device_scanner",
+        "workflow": "folder_scanner",
         "weight": 1.0,
     },
     {
         "patterns": [r"organize", r"sort", r"clean\s*up", r"tidy", r"desktop"],
-        "workflow": "device_scanner",
+        "workflow": "folder_scanner",
         "weight": 0.95,
     },
     {

@@ -1,18 +1,20 @@
-"""ShadowForge v2 GUI Dashboard — built with CustomTkinter."""
+"""ShadowForge v2.1 GUI Dashboard."""
 
 from __future__ import annotations
 
 import os
 import threading
+from tkinter import filedialog
 from typing import Any, Optional
 
 import customtkinter as ctk
 
+from shadowforge.agents.quick_actions import QUICK_ACTIONS, list_quick_actions
 from shadowforge.core.orchestrator import Orchestrator
 
 
 class Dashboard(ctk.CTk):
-    """Main application window for ShadowForge v2."""
+    """Main application window for ShadowForge."""
 
     COLORS = {
         "bg_dark": "#1a1a2e",
@@ -34,7 +36,7 @@ class Dashboard(ctk.CTk):
         self.config = config or {}
         gui_cfg = self.config.get("gui", {})
 
-        self.title("ShadowForge v2 — Multi-Agent Desktop Automation")
+        self.title("ShadowForge v2.1 — Multi-Agent Desktop Automation")
         self.geometry(f"{gui_cfg.get('window_width', 1150)}x{gui_cfg.get('window_height', 820)}")
         self.minsize(950, 700)
 
@@ -42,6 +44,7 @@ class Dashboard(ctk.CTk):
         ctk.set_default_color_theme("blue")
         self.configure(fg_color=self.COLORS["bg_dark"])
         self._refresh_ms = gui_cfg.get("refresh_interval_ms", 1000)
+        self._latest_scan_path = ""
 
         self._build_ui()
         self.orchestrator.on_status_change(self._on_status_update)
@@ -64,7 +67,7 @@ class Dashboard(ctk.CTk):
         ).pack(pady=(25, 2), padx=18, anchor="w")
 
         ctk.CTkLabel(
-            sidebar, text="v2.0 — Local Agents",
+            sidebar, text="v2.1 — Local Agents",
             font=ctk.CTkFont(size=11), text_color=self.COLORS["text_dim"],
         ).pack(padx=18, anchor="w")
 
@@ -85,24 +88,6 @@ class Dashboard(ctk.CTk):
             command=self._stop_all,
         ).pack(fill="x", padx=18, pady=4)
 
-        ctk.CTkFrame(sidebar, height=2, fg_color="#2a2a4a").pack(fill="x", padx=18, pady=12)
-
-        ctk.CTkLabel(
-            sidebar, text="QUICK RUN", font=ctk.CTkFont(size=11, weight="bold"),
-            text_color=self.COLORS["text_dim"],
-        ).pack(padx=18, anchor="w")
-
-        for label, wf in [
-            ("🖥️  One-Shot Screen Audit", "screen_audit"),
-            ("📥  Scan Downloads", "cleanup_downloads"),
-        ]:
-            ctk.CTkButton(
-                sidebar, text=label, font=ctk.CTkFont(size=12),
-                fg_color="transparent", text_color=self.COLORS["text"],
-                hover_color=self.COLORS["accent_hover"], anchor="w", height=32,
-                command=lambda w=wf: self._run_workflow(w),
-            ).pack(fill="x", padx=14, pady=2)
-
         self.status_label = ctk.CTkLabel(
             sidebar, text="● Idle", font=ctk.CTkFont(size=12), text_color=self.COLORS["text_dim"],
         )
@@ -120,18 +105,19 @@ class Dashboard(ctk.CTk):
         main.grid_rowconfigure(3, weight=1)
 
         self._build_tool_panels(main)
+
         self.agents_frame = ctk.CTkFrame(main, fg_color="transparent")
         self.agents_frame.grid(row=1, column=0, sticky="ew", pady=(0, 8))
         self._build_agent_cards()
 
         self.tabview = ctk.CTkTabview(main, fg_color=self.COLORS["bg_card"], corner_radius=12)
         self.tabview.grid(row=3, column=0, sticky="nsew")
-        for tab in ("Tasks", "History", "Messages", "Results"):
+        for tab in ("Tasks", "Results", "History", "Messages"):
             self.tabview.add(tab)
 
         for tab, attr in [
-            ("Tasks", "tasks_text"), ("History", "history_text"),
-            ("Messages", "messages_text"), ("Results", "results_text"),
+            ("Tasks", "tasks_text"), ("Results", "results_text"),
+            ("History", "history_text"), ("Messages", "messages_text"),
         ]:
             box = ctk.CTkTextbox(
                 self.tabview.tab(tab), font=ctk.CTkFont(family="Consolas", size=12),
@@ -145,8 +131,7 @@ class Dashboard(ctk.CTk):
         self.stats_labels: dict[str, ctk.CTkLabel] = {}
         for key, label in [
             ("pending", "Pending"), ("running", "Running"),
-            ("completed", "Completed"), ("failed", "Failed"),
-            ("captures", "Screenshots"),
+            ("completed", "Done"), ("failed", "Failed"), ("captures", "Screenshots"),
         ]:
             frame = ctk.CTkFrame(self.stats_frame, fg_color="transparent")
             frame.pack(side="left", expand=True, fill="x", padx=8, pady=6)
@@ -171,71 +156,74 @@ class Dashboard(ctk.CTk):
         panels.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         panels.grid_columnconfigure((0, 1, 2), weight=1)
 
-        # --- Screen Monitor ---
+        # Screen Monitor
         mon = self._tool_card(panels, "📸 Screen Monitor", 0)
-        ctk.CTkLabel(mon, text="Capture interval (seconds):",
-                     font=ctk.CTkFont(size=11), text_color=self.COLORS["text_dim"]).pack(padx=12, anchor="w")
+        ctk.CTkLabel(mon, text="Interval (seconds):", font=ctk.CTkFont(size=11),
+                     text_color=self.COLORS["text_dim"]).pack(padx=12, anchor="w")
         self.interval_var = ctk.StringVar(value="5")
-        ctk.CTkOptionMenu(
-            mon, values=self.INTERVAL_OPTIONS, variable=self.interval_var,
-            fg_color=self.COLORS["accent"], width=120,
-        ).pack(padx=12, pady=4, anchor="w")
-
+        ctk.CTkOptionMenu(mon, values=self.INTERVAL_OPTIONS, variable=self.interval_var,
+                          fg_color=self.COLORS["accent"], width=120).pack(padx=12, pady=4, anchor="w")
         self.monitor_btn = ctk.CTkButton(
             mon, text="Start Interval Capture", fg_color=self.COLORS["success"],
             hover_color="#00a381", command=self._toggle_monitor,
         )
         self.monitor_btn.pack(padx=12, pady=8, anchor="w")
-
         self.capture_count_label = ctk.CTkLabel(
             mon, text="Captures: 0", font=ctk.CTkFont(size=11), text_color=self.COLORS["text_dim"],
         )
         self.capture_count_label.pack(padx=12, pady=(0, 10), anchor="w")
 
-        # --- Device Scanner ---
-        scan = self._tool_card(panels, "📁 Device Scanner & Planner", 1)
-        ctk.CTkLabel(scan, text="Folder path to scan:",
-                     font=ctk.CTkFont(size=11), text_color=self.COLORS["text_dim"]).pack(padx=12, anchor="w")
-        self.path_entry = ctk.CTkEntry(
-            scan, placeholder_text=r"e.g. C:\Users\You\Desktop  or  ~/Downloads",
-            font=ctk.CTkFont(size=12), height=32,
-        )
-        self.path_entry.pack(padx=12, pady=4, fill="x")
+        # Folder Scanner
+        scan = self._tool_card(panels, "📁 Folder Scanner", 1)
+        ctk.CTkLabel(scan, text="Folder to scan:", font=ctk.CTkFont(size=11),
+                     text_color=self.COLORS["text_dim"]).pack(padx=12, anchor="w")
+
+        path_row = ctk.CTkFrame(scan, fg_color="transparent")
+        path_row.pack(padx=12, pady=4, fill="x")
+        self.path_entry = ctk.CTkEntry(path_row, font=ctk.CTkFont(size=12), height=32)
+        self.path_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
         self.path_entry.insert(0, os.path.expanduser("~/Desktop"))
+        ctk.CTkButton(path_row, text="Browse", width=70, fg_color="#2a2a4a",
+                      command=self._browse_folder).pack(side="right")
 
         ctk.CTkButton(
-            scan, text="Scan & Analyze", fg_color=self.COLORS["accent"],
-            hover_color=self.COLORS["accent_hover"], command=self._run_device_scanner,
+            scan, text="Scan Folder", fg_color=self.COLORS["accent"],
+            hover_color=self.COLORS["accent_hover"], command=self._run_folder_scanner,
         ).pack(padx=12, pady=8, anchor="w")
 
-        # --- Smart Automate ---
-        auto = self._tool_card(panels, "🖱️ Smart Automate", 2)
-        ctk.CTkLabel(auto, text="Find this text on screen:",
-                     font=ctk.CTkFont(size=11), text_color=self.COLORS["text_dim"]).pack(padx=12, anchor="w")
-        self.target_entry = ctk.CTkEntry(
-            scan, placeholder_text='e.g. "Start" or "File"',
-            font=ctk.CTkFont(size=12), height=32,
+        self.scan_status_label = ctk.CTkLabel(
+            scan, text="", font=ctk.CTkFont(size=10), text_color=self.COLORS["text_dim"],
         )
-        # fix: parent should be auto not scan
-        self.target_entry.destroy()
-        self.target_entry = ctk.CTkEntry(
-            auto, placeholder_text='e.g. Start Executor, File, Save',
-            font=ctk.CTkFont(size=12), height=32,
-        )
-        self.target_entry.pack(padx=12, pady=4, fill="x")
+        self.scan_status_label.pack(padx=12, pady=(0, 10), anchor="w")
 
-        ctk.CTkLabel(auto, text="Then press keys (optional):",
-                     font=ctk.CTkFont(size=11), text_color=self.COLORS["text_dim"]).pack(padx=12, anchor="w")
-        self.keys_entry = ctk.CTkEntry(
-            auto, placeholder_text="e.g. enter  |  ctrl+s  |  type:hello",
-            font=ctk.CTkFont(size=12), height=32,
+        # Quick Actions
+        quick = self._tool_card(panels, "⚡ Quick Actions", 2)
+        ctk.CTkLabel(quick, text="Pick an action (3s countdown):", font=ctk.CTkFont(size=11),
+                     text_color=self.COLORS["text_dim"]).pack(padx=12, anchor="w")
+
+        action_labels = [v["label"] for v in QUICK_ACTIONS.values()]
+        self.action_var = ctk.StringVar(value=action_labels[0])
+        ctk.CTkOptionMenu(
+            quick, values=action_labels, variable=self.action_var,
+            fg_color=self.COLORS["warning"], text_color="#1a1a2e", width=200,
+        ).pack(padx=12, pady=4, anchor="w")
+
+        self.quick_extra_entry = ctk.CTkEntry(
+            quick, placeholder_text="Text or hotkey (for custom actions only)",
+            font=ctk.CTkFont(size=11), height=30,
         )
-        self.keys_entry.pack(padx=12, pady=4, fill="x")
+        self.quick_extra_entry.pack(padx=12, pady=4, fill="x")
 
         ctk.CTkButton(
-            auto, text="Find & Automate", fg_color=self.COLORS["warning"],
-            text_color="#1a1a2e", hover_color="#e6b84d", command=self._run_smart_automate,
+            quick, text="▶  Run Action", fg_color=self.COLORS["warning"],
+            text_color="#1a1a2e", hover_color="#e6b84d", command=self._run_quick_action,
         ).pack(padx=12, pady=8, anchor="w")
+
+    def _browse_folder(self) -> None:
+        folder = filedialog.askdirectory(title="Select folder to scan")
+        if folder:
+            self.path_entry.delete(0, "end")
+            self.path_entry.insert(0, folder)
 
     def _build_agent_cards(self) -> None:
         for w in self.agents_frame.winfo_children():
@@ -253,6 +241,12 @@ class Dashboard(ctk.CTk):
                          font=ctk.CTkFont(size=9), text_color=self.COLORS["text_dim"]).pack(
                 padx=8, anchor="w")
 
+    def _action_id_from_label(self, label: str) -> str:
+        for aid, spec in QUICK_ACTIONS.items():
+            if spec["label"] == label:
+                return aid
+        return "show_desktop"
+
     def _ensure_executor(self) -> None:
         if not self.orchestrator.executor.is_running:
             self.orchestrator.start_executor()
@@ -269,48 +263,41 @@ class Dashboard(ctk.CTk):
             interval = float(self.interval_var.get())
             self._ensure_executor()
             threading.Thread(
-                target=lambda: self.orchestrator.start_screen_monitor(interval), daemon=True
+                target=lambda: self.orchestrator.start_screen_monitor(interval), daemon=True,
             ).start()
             self.monitor_btn.configure(text="Stop Interval Capture", fg_color=self.COLORS["danger"])
-            self._log(f"📸 Screen monitor started — every {interval}s")
+            self._log(f"📸 Screen monitor — every {interval}s")
 
-    def _run_device_scanner(self) -> None:
+    def _run_folder_scanner(self) -> None:
         path = self.path_entry.get().strip()
         if not path:
-            self._log("❌ Enter a folder path first")
+            self._log("❌ Enter or browse to a folder first")
             return
+        self._latest_scan_path = path
+        self.scan_status_label.configure(text=f"Scanning: {path}")
 
         def _run() -> None:
             self._ensure_executor()
-            self.orchestrator.run_workflow("device_scanner", {"scan_path": path, "path": path, "depth": 5})
+            self.orchestrator.run_folder_scan(path)
 
         threading.Thread(target=_run, daemon=True).start()
-        self._log(f"📁 Scanning: {path}")
+        self._log(f"📁 Fresh scan started: {path}")
 
-    def _run_smart_automate(self) -> None:
-        target = self.target_entry.get().strip()
-        if not target:
-            self._log("❌ Enter text to find on screen")
-            return
-        keys = self.keys_entry.get().strip()
+    def _run_quick_action(self) -> None:
+        action_id = self._action_id_from_label(self.action_var.get())
+        extra = self.quick_extra_entry.get().strip()
 
         def _run() -> None:
             self._ensure_executor()
-            self.orchestrator.run_workflow("smart_automate", {
-                "target_text": target,
-                "text": target,
-                "keys": keys,
-            })
+            self.orchestrator.run_quick_action(
+                action_id,
+                custom_text=extra if action_id == "type_custom" else "",
+                custom_keys=extra if action_id == "custom_hotkey" else "",
+                countdown=3,
+            )
 
         threading.Thread(target=_run, daemon=True).start()
-        self._log(f"🖱️ Smart automate: find '{target}'" + (f" → keys: {keys}" if keys else ""))
-
-    def _run_workflow(self, name: str) -> None:
-        def _run() -> None:
-            self._ensure_executor()
-            self.orchestrator.run_workflow(name)
-        threading.Thread(target=_run, daemon=True).start()
-        self._log(f"▶ Workflow: {name}")
+        self._log(f"⚡ Quick action in 3s: {self.action_var.get()}")
 
     def _toggle_executor(self) -> None:
         if self.orchestrator.executor.is_running:
@@ -340,69 +327,70 @@ class Dashboard(ctk.CTk):
 
         mon = status.get("screen_monitor", {})
         count = mon.get("capture_count", 0)
-        self.stats_labels.get("captures", ctk.CTkLabel(self)).configure(text=str(count))
+        if "captures" in self.stats_labels:
+            self.stats_labels["captures"].configure(text=str(count))
         self.capture_count_label.configure(text=f"Captures: {count}")
-        if mon.get("running"):
-            self.monitor_status_label.configure(
-                text=f"📸 Monitoring every {mon.get('interval_sec', 0)}s")
-            self.monitor_btn.configure(text="Stop Interval Capture", fg_color=self.COLORS["danger"])
-        else:
-            self.monitor_status_label.configure(text="")
 
         self.tasks_text.delete("1.0", "end")
         for task in self.orchestrator.planner.get_queue():
             icon = {"pending": "⏳", "running": "🔄", "completed": "✅", "failed": "❌"}.get(
                 task.status.value, "•")
-            line = f"{icon} [{task.agent}] {task.name} — {task.status.value}\n"
-            self.tasks_text.insert("end", line)
+            self.tasks_text.insert("end", f"{icon} [{task.agent}] {task.name} — {task.status.value}\n")
             if task.result and task.status.value == "completed":
                 summary = self._summarize_result(task.action, task.result)
                 if summary:
                     self.tasks_text.insert("end", f"    ↳ {summary}\n")
 
         self.results_text.delete("1.0", "end")
-        for task in self.orchestrator.planner.get_completed()[-10:]:
-            if task.result:
-                self.results_text.insert("end", f"=== {task.name} ===\n")
-                self.results_text.insert("end", self._format_result(task.result) + "\n\n")
+        report = self.orchestrator._last_folder_report
+        if report:
+            scanned = report.get("scanned_path") or report.get("path", self._latest_scan_path)
+            self.results_text.insert("end", f"═══ FOLDER SCAN REPORT ═══\n")
+            self.results_text.insert("end", f"Scanned path: {scanned}\n\n")
+            if report.get("total_files") is not None:
+                self.results_text.insert("end", f"Total files:  {report.get('total_files')}\n")
+                self.results_text.insert("end", f"Total size:   {report.get('total_size_mb', report.get('total_size_mb', '?'))} MB\n")
+            if report.get("file_count") is not None:
+                self.results_text.insert("end", f"Total files:  {report.get('file_count')}\n")
+                self.results_text.insert("end", f"Total size:   {report.get('total_size_mb')} MB\n")
+            if report.get("unique_extensions"):
+                self.results_text.insert("end", f"File types:   {report.get('unique_extensions')} unique extensions\n")
+            if report.get("category_breakdown"):
+                self.results_text.insert("end", f"Categories:   {report.get('category_breakdown')}\n")
+            if report.get("extension_breakdown"):
+                self.results_text.insert("end", f"Top types:    {report.get('extension_breakdown')}\n")
+            if report.get("duplicate_groups") is not None:
+                self.results_text.insert("end", f"Duplicates:   {report.get('duplicate_groups')} groups ({report.get('duplicate_files', 0)} extra files)\n")
+            if report.get("largest_files"):
+                self.results_text.insert("end", f"\nLargest files:\n")
+                for f in report.get("largest_files", [])[:5]:
+                    self.results_text.insert("end", f"  • {f.get('name')} — {f.get('size_mb')} MB\n")
+            self.scan_status_label.configure(text=f"Last scan: {scanned}")
+
+        qa = self.orchestrator._last_quick_action_result
+        if qa and not report.get("total_files") and not report.get("file_count"):
+            self.results_text.insert("end", f"\n═══ QUICK ACTION ═══\n{qa}\n")
 
         self.history_text.delete("1.0", "end")
-        for entry in self.orchestrator.history.get_recent(25):
+        for entry in self.orchestrator.history.get_recent(20):
             self.history_text.insert("end", f"[{entry.status}] {entry.agent}.{entry.action}\n")
 
         self.messages_text.delete("1.0", "end")
-        for msg in self.orchestrator.message_bus.get_history(15):
-            self.messages_text.insert("end", f"{msg.sender} → {msg.recipient} [{msg.message_type}]\n")
+        for msg in self.orchestrator.message_bus.get_history(12):
+            self.messages_text.insert("end", f"{msg.sender} → {msg.recipient}\n")
 
     def _summarize_result(self, action: str, result: dict[str, Any]) -> str:
-        if action == "capture_screen":
-            return f"Saved {result.get('path', '')}"
+        if action == "scan_directory":
+            return f"{result.get('file_count', 0)} files @ {result.get('path', '')}"
         if action == "analyze_summary":
-            return f"{result.get('total_files', 0)} files, {result.get('total_size_mb', 0)} MB"
+            return f"{result.get('total_files', 0)} files, {result.get('total_size_mb', 0)} MB @ {result.get('scanned_path', '')}"
         if action == "find_duplicates":
             return f"{result.get('duplicate_groups', 0)} duplicate groups"
-        if action == "find_text":
-            pos = result.get("click_position", {})
-            return f"Found '{result.get('searched_text')}' at ({pos.get('x')}, {pos.get('y')})" if result.get("success") else "Text not found"
-        if action == "click":
-            return f"Clicked ({result.get('x')}, {result.get('y')})"
-        if action == "execute_keys":
-            return f"Keys: {result.get('keys', result.get('typed', 'skipped'))}"
+        if action == "capture_screen":
+            return f"Saved {os.path.basename(result.get('path', ''))}"
+        if action == "run_quick_action":
+            return f"Ran: {result.get('label', result.get('action_id', ''))}"
         return ""
-
-    def _format_result(self, result: dict[str, Any]) -> str:
-        lines = []
-        for key, val in result.items():
-            if key in ("files", "groups", "elements", "matches", "plan"):
-                continue
-            if isinstance(val, dict) and len(str(val)) < 200:
-                lines.append(f"  {key}: {val}")
-            elif not isinstance(val, (list, dict)):
-                lines.append(f"  {key}: {val}")
-        for extra in ("category_breakdown", "extension_breakdown", "largest_files"):
-            if extra in result:
-                lines.append(f"  {extra}: {result[extra]}")
-        return "\n".join(lines)
 
     def _log(self, msg: str) -> None:
         self.tasks_text.insert("end", f"{msg}\n")

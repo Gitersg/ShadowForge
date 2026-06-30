@@ -60,8 +60,13 @@ class Task:
 
 # Rule-based workflow templates
 WORKFLOW_TEMPLATES: dict[str, list[dict[str, Any]]] = {
+    "folder_scanner": [
+        {"name": "Scan folder", "agent": "file", "action": "scan_directory", "params": {"path": "~/Desktop", "depth": 5, "force_rescan": True}},
+        {"name": "Analyze & summarize", "agent": "file", "action": "analyze_summary", "params": {}},
+        {"name": "Find duplicates", "agent": "file", "action": "find_duplicates", "params": {}},
+    ],
     "device_scanner": [
-        {"name": "Scan directory", "agent": "file", "action": "scan_directory", "params": {"path": "~/Desktop", "depth": 5}},
+        {"name": "Scan folder", "agent": "file", "action": "scan_directory", "params": {"path": "~/Desktop", "depth": 5, "force_rescan": True}},
         {"name": "Analyze & summarize", "agent": "file", "action": "analyze_summary", "params": {}},
         {"name": "Find duplicates", "agent": "file", "action": "find_duplicates", "params": {}},
     ],
@@ -184,6 +189,11 @@ class TaskPlanner:
 
     def clear_queue(self) -> None:
         self._queue.clear()
+
+    def reset_for_new_run(self) -> None:
+        """Clear pending queue and completed history for a fresh workflow run."""
+        self._queue.clear()
+        self._completed.clear()
 
     def get_stats(self) -> dict[str, int]:
         statuses = [t.status for t in self._queue]

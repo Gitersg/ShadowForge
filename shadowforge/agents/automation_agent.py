@@ -33,7 +33,7 @@ class AutomationAgent(BaseAgent):
             message_bus=message_bus,
             capabilities=[
                 "click", "double_click", "type_text", "hotkey",
-                "execute_keys", "move_mouse", "screenshot",
+                "execute_keys", "run_quick_action", "move_mouse", "screenshot",
             ],
         )
         self.pause = pause
@@ -58,6 +58,7 @@ class AutomationAgent(BaseAgent):
             "type_text": self._type_text,
             "hotkey": self._hotkey,
             "execute_keys": self._execute_keys,
+            "run_quick_action": self._run_quick_action,
             "move_mouse": self._move_mouse,
             "screenshot": self._screenshot,
             "scroll": self._scroll,
@@ -109,6 +110,47 @@ class AutomationAgent(BaseAgent):
             keys = [k.strip() for k in keys.replace(" ", "").split("+") if k.strip()]
         pyautogui.hotkey(*keys)
         return {"success": True, "action": "hotkey", "keys": keys}
+
+    def _run_quick_action(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Run a predefined quick action by ID."""
+        from shadowforge.agents.quick_actions import QUICK_ACTIONS
+
+        action_id = params.get("action_id", "")
+        if action_id not in QUICK_ACTIONS:
+            raise ValueError(f"Unknown quick action: {action_id}")
+
+        spec = QUICK_ACTIONS[action_id]
+        countdown = int(params.get("countdown", 3))
+        if countdown > 0:
+            self.logger.info("Quick action in %ds — focus your target window!", countdown)
+            time.sleep(countdown)
+
+        if spec.get("action") == "capture_screen":
+            return {"success": True, "delegate": "vision", "action": "capture_screen"}
+
+        keys = spec.get("keys", "")
+        if keys:
+            self._execute_keys({"keys": keys})
+
+        then_keys = spec.get("then_keys")
+        if then_keys:
+            time.sleep(spec.get("delay", 0.5))
+            self._execute_keys({"keys": then_keys})
+
+        custom_text = params.get("custom_text", "").strip()
+        if action_id == "type_custom" and custom_text:
+            pyautogui.write(custom_text) if not custom_text.isascii() else pyautogui.typewrite(custom_text, interval=0.04)
+
+        custom_keys = params.get("custom_keys", "").strip()
+        if action_id == "custom_hotkey" and custom_keys:
+            self._execute_keys({"keys": custom_keys})
+
+        return {
+            "success": True,
+            "action": "run_quick_action",
+            "action_id": action_id,
+            "label": spec["label"],
+        }
 
     def _execute_keys(self, params: dict[str, Any]) -> dict[str, Any]:
         """Execute keyboard instruction: hotkey (ctrl+s) or type text (type:hello)."""

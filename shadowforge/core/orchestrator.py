@@ -30,6 +30,8 @@ class Orchestrator:
         )
         self._agents: dict[str, BaseAgent] = {}
         self._status_callbacks: list[Callable[[dict[str, Any]], None]] = []
+        self._last_folder_report: dict[str, Any] = {}
+        self._last_quick_action_result: dict[str, Any] = {}
 
     def register_agent(self, agent: BaseAgent) -> None:
         self._agents[agent.name] = agent
@@ -54,6 +56,67 @@ class Orchestrator:
         self.logger.info("Queued workflow '%s' with %d tasks", workflow_name, len(tasks))
         self._notify_status()
         return tasks
+
+    def run_folder_scan(self, folder_path: str, depth: int = 5) -> list[Task]:
+        """Fresh folder scan — clears cache and queue, scans the exact path given."""
+        self.planner.reset_for_new_run()
+        file_agent = self._agents.get("file")
+        if file_agent and hasattr(file_agent, "clear_scan_cache"):
+            file_agent.clear_scan_cache()
+
+        overrides = {
+            "path": folder_path,
+            "scan_path": folder_path,
+            "depth": depth,
+            "force_rescan": True,
+        }
+        workflow = "folder_scanner"
+        tasks = self.planner.enqueue_workflow(workflow, overrides)
+        if tasks and tasks[0].parent_id:
+            self.executor.set_workflow_context(tasks[0].parent_id, overrides)
+        self.logger.info("Folder scan queued for: %s", folder_path)
+        self._notify_status()
+        return tasks
+
+    def run_quick_action(
+        self,
+        action_id: str,
+        custom_text: str = "",
+        custom_keys: str = "",
+        countdown: int = 3,
+    ) -> dict[str, Any]:
+        """Run a reliable preset automation action."""
+        automation = self._agents.get("automation")
+        vision = self._agents.get("vision")
+        if not automation:
+            raise RuntimeError("Automation agent not available")
+
+        if action_id == "screenshot_now" and vision:
+            if countdown > 0:
+                import time
+                time.sleep(countdown)
+            task = self.run_task("Screenshot", "vision", "capture_screen", execute_now=True)
+            result = task.result or {}
+            self._last_quick_action_result = result
+            self._notify_status()
+            return result
+
+        task = self.run_task(
+            name=f"Quick: {action_id}",
+            agent="automation",
+            action="run_quick_action",
+            params={
+                "action_id": action_id,
+                "custom_text": custom_text,
+                "custom_keys": custom_keys,
+                "countdown": countdown,
+            },
+            execute_now=True,
+        )
+        result = task.result or {}
+        self._last_quick_action_result = result
+        self._notify_status()
+        return result
 
     def run_task(
         self,
@@ -128,12 +191,15 @@ class Orchestrator:
         self._status_callbacks.append(callback)
 
     def _on_task_complete(self, task: Task) -> None:
+        details = task.result or {}
         self.history.record(
             agent=task.agent,
             action=task.action,
             status="completed",
-            details=task.result or {},
+            details=details,
         )
+        if task.action in ("analyze_summary", "find_duplicates", "scan_directory"):
+            self._last_folder_report = {**self._last_folder_report, **details}
         self._notify_status()
 
     def _on_task_error(self, task: Task, error: str) -> None:

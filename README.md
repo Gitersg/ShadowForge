@@ -1,13 +1,13 @@
-# ⚡ ShadowForge v2
+# ⚡ ShadowForge v2.1
 
 **A fully local, offline Multi-Agent Desktop Automation System**
 
-### What's New in v2
+### What's New in v2.1
 - **Screen Monitor** — interval capture (1/2/3/5/10 sec) while executor runs
-- **Device Scanner & Planner** — scan any folder path, full analysis + duplicate detection
-- **Smart Automate** — find text on screen, click it, press keys (`enter`, `ctrl+s`, `type:hello`)
-- **EasyOCR + Tesseract** — dual OCR engines for reliable text detection
-- **Workflow context chaining** — agents pass results to each other automatically
+- **Folder Scanner** — scan ANY folder with Browse button; fresh results every time (bug fixed)
+- **Quick Actions** — reliable one-click automations (Win+D, Ctrl+S, Screenshot, Alt+Tab, etc.)
+- **EasyOCR + Tesseract** — dual OCR engines
+- **Clean desktop launcher** — double-click `ShadowForge.lnk` or `RUN_SHADOWFORGE.bat`
 
 ShadowForge is a modular, extensible multi-agent system that observes your desktop, understands context, plans tasks, and autonomously executes automation workflows — with **zero external API or internet dependency**.
 

@@ -45,6 +45,11 @@ class FileAgent(BaseAgent):
         }
         self._last_scan: dict[str, Any] = {}
 
+    def clear_scan_cache(self) -> None:
+        """Clear cached scan so the next scan is always fresh."""
+        self._last_scan = {}
+        self.logger.info("Scan cache cleared")
+
     def process(self, task: dict[str, Any]) -> dict[str, Any]:
         action = task.get("action", "")
         params = task.get("params", {})
@@ -70,10 +75,29 @@ class FileAgent(BaseAgent):
 
     def _scan_directory(self, params: dict[str, Any]) -> dict[str, Any]:
         path = self._resolve_path(params.get("path", "~/Desktop"))
-        max_depth = params.get("depth", 3)
+        max_depth = params.get("depth", 5)
+        force = params.get("force_rescan", False)
+        resolved = str(path)
 
         if not path.exists():
             raise FileNotFoundError(f"Directory not found: {path}")
+
+        if not force and self._last_scan.get("path") == resolved and self._last_scan.get("files"):
+            files = self._last_scan["files"]
+            total_size = sum(f["size"] for f in files)
+            ext_counts: dict[str, int] = defaultdict(int)
+            for f in files:
+                ext_counts[f["extension"]] += 1
+            self.logger.info("Returning cached scan for %s (%d files)", path, len(files))
+            return {
+                "success": True,
+                "path": resolved,
+                "file_count": len(files),
+                "total_size_bytes": total_size,
+                "total_size_mb": round(total_size / (1024 * 1024), 2),
+                "extension_breakdown": dict(ext_counts),
+                "cached": True,
+            }
 
         files: list[dict[str, Any]] = []
         total_size = 0
@@ -122,14 +146,27 @@ class FileAgent(BaseAgent):
                 return cat
         return "other"
 
+    def _path_matches_scan(self, params: dict[str, Any]) -> bool:
+        requested = params.get("path") or params.get("scan_path")
+        if not requested or not self._last_scan.get("path"):
+            return False
+        return self._last_scan["path"] == str(self._resolve_path(requested))
+
     def _analyze_summary(self, params: dict[str, Any]) -> dict[str, Any]:
         """Full analysis report for the last scanned directory."""
-        if not self._last_scan.get("files") and params.get("path"):
-            self._scan_directory({"path": params["path"], "depth": params.get("depth", 5)})
+        requested = params.get("path") or params.get("scan_path")
+        if requested and not self._path_matches_scan(params):
+            self._scan_directory({
+                "path": requested,
+                "depth": params.get("depth", 5),
+                "force_rescan": True,
+            })
+        elif not self._last_scan.get("files") and requested:
+            self._scan_directory({"path": requested, "depth": params.get("depth", 5), "force_rescan": True})
 
         files = self._last_scan.get("files", [])
         if not files:
-            raise RuntimeError("No scan data. Run scan_directory first or provide a valid path.")
+            raise RuntimeError("No scan data. Provide a valid folder path and scan again.")
 
         categories: dict[str, list[dict[str, Any]]] = defaultdict(list)
         ext_counts: dict[str, int] = defaultdict(int)
@@ -172,9 +209,13 @@ class FileAgent(BaseAgent):
         return h.hexdigest()
 
     def _find_duplicates(self, params: dict[str, Any]) -> dict[str, Any]:
+        requested = params.get("path") or params.get("scan_path")
+        if requested and not self._path_matches_scan(params):
+            self._scan_directory({"path": requested, "depth": params.get("depth", 5), "force_rescan": True})
+
         files = self._last_scan.get("files", [])
-        if not files and "path" in params:
-            self._scan_directory({"path": params["path"]})
+        if not files and requested:
+            self._scan_directory({"path": requested, "force_rescan": True})
             files = self._last_scan.get("files", [])
 
         hash_map: dict[str, list[str]] = defaultdict(list)
